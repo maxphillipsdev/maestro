@@ -37,9 +37,9 @@ struct EraseTextHandler: HTTPHandler {
     
     private func waitUntilKeyboardIsPresented(appId: String?) async {
         try? await TimeoutHelper.repeatUntil(timeout: 1, delta: 0.2) {
-            guard let appId = appId else { return true }
-
-            return XCUIApplication(bundleIdentifier: appId).keyboards.firstMatch.exists
+            let app = RunningApp.getForegroundApp() ?? XCUIApplication(bundleIdentifier: RunningApp.homescreenBundleId)
+            
+            return app.keyboards.firstMatch.exists
         }
     }
 }

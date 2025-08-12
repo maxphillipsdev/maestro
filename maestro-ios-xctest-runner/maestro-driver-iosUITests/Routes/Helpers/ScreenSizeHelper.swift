@@ -12,20 +12,51 @@ public enum DeviceOrientation: Int, @unchecked Sendable {
 }
 
 struct ScreenSizeHelper {
+    
+    private static var cachedSize: (Float, Float)?
+    private static var lastAppBundleId: String?
+    private static var lastOrientation: DeviceOrientation?
+    
     static func physicalScreenSize() -> (Float, Float) {
         #if os(tvOS)
         let homescreenBundleId = "com.apple.PineBoard"
+        let currentOrientation = Optional(DeviceOrientation.unknown)
         #else
         let homescreenBundleId = "com.apple.springboard"
+        let currentOrientation = DeviceOrientation(rawValue: XCUIDevice.shared.orientation.rawValue)
         #endif
-        let springboardApp = XCUIApplication(bundleIdentifier: homescreenBundleId)
-        let screenSize = springboardApp.frame.size
-        return (Float(screenSize.width), Float(screenSize.height))
+
+        let app = RunningApp.getForegroundApp() ?? XCUIApplication(bundleIdentifier: homescreenBundleId)
+        let currentAppBundleId = app.bundleID
+
+        if let cached = cachedSize,
+           currentAppBundleId == lastAppBundleId,
+           currentOrientation == lastOrientation {
+            return cached
+        }
+        
+        do {
+            let _ = try app.snapshot()
+            
+            let screenSize = app.firstMatch.frame.size
+            let size = (Float(screenSize.width), Float(screenSize.height))
+            
+            // Cache results
+            cachedSize = size
+            lastAppBundleId = currentAppBundleId
+            lastOrientation = currentOrientation
+            
+            return size
+        } catch let error {
+            NSLog("Failure while getting screen size: \(error), falling back to get springboard size.")
+            let application = XCUIApplication(bundleIdentifier: homescreenBundleId)
+            let screenSize = application.frame.size
+            return (Float(screenSize.width), Float(screenSize.height))
+        }
     }
 
     private static func actualOrientation() -> DeviceOrientation {
         #if os(tvOS)
-        // Please don't rotate your AppleTV...
         let orientation = Optional(DeviceOrientation.unknown)
         #else
         let orientation = DeviceOrientation(rawValue: XCUIDevice.shared.orientation.rawValue)
