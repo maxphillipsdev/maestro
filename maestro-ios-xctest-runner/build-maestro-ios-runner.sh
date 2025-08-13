@@ -8,29 +8,23 @@ fi
 
 rm -rf ./build/Products
 
-xcodebuild \
-	ARCHS="x86_64 arm64" \
-	ONLY_ACTIVE_ARCH=NO \
-	-project ./maestro-ios-xctest-runner/maestro-driver-ios.xcodeproj \
-	-scheme maestro-driver-ios \
-	-sdk iphonesimulator \
-	-destination "generic/platform=iOS Simulator" \
-	-IDEBuildLocationStyle=Custom \
-	-IDECustomBuildLocationType=Absolute \
-	-IDECustomBuildProductsPath="$PWD/build/Products" \
-	build-for-testing
+# Determine build output directory
+if [[ "$DESTINATION" == *"iOS Simulator"* ]]; then
+	BUILD_OUTPUT_DIR="Debug-iphonesimulator"
+elif [[ "$DESTINATION" == *"tvOS Simulator"* ]]; then
+	BUILD_OUTPUT_DIR="Debug-appletvsimulator"
+else
+	BUILD_OUTPUT_DIR="Debug-iphoneos"
+fi
 
-xcodebuild \
-	ARCHS="x86_64 arm64" \
-	ONLY_ACTIVE_ARCH=NO \
-	-project ./maestro-ios-xctest-runner/maestro-driver-ios.xcodeproj \
-	-scheme maestro-driver-ios \
-	-sdk appletvsimulator \
-	-destination "generic/platform=tvOS Simulator" \
-	-IDEBuildLocationStyle=Custom \
-	-IDECustomBuildLocationType=Absolute \
-	-IDECustomBuildProductsPath="$PWD/build/Products" \
-	build-for-testing
+if [[ "$DESTINATION" == *"iOS Simulator"* ]]; then
+  DEVELOPMENT_TEAM_OPT=""
+elif [[ "$DESTINATION" == *"tvOS Simulator"* ]]; then
+  DEVELOPMENT_TEAM_OPT=""
+else
+  echo "Building iphoneos drivers for team: ${DEVELOPMENT_TEAM}..."
+	DEVELOPMENT_TEAM_OPT="DEVELOPMENT_TEAM=${DEVELOPMENT_TEAM}"
+fi
 
 ## Remove intermediates, output and copy runner in maestro-ios-driver
 cp -r \
