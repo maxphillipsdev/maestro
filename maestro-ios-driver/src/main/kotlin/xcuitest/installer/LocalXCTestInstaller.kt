@@ -247,10 +247,7 @@ class LocalXCTestInstaller(
     }
 
     companion object {
-        private const val UI_TEST_RUNNER_PATH = "maestro-driver-iosUITests-Runner.zip"
-        private const val XCTEST_RUN_PATH = "maestro-driver-ios-config.xctestrun"
-        private const val UI_TEST_HOST_PATH = "maestro-driver-ios.zip"
-        private const val UI_TEST_RUNNER_APP_BUNDLE_ID = "dev.mobile.maestro-driver-iosUITests.xctrunner"
+        const val UI_TEST_RUNNER_APP_BUNDLE_ID = "dev.mobile.maestro-driver-iosUITests.xctrunner"
 
         private const val SERVER_LAUNCH_TIMEOUT_MS = 120000L
         private const val MAESTRO_DRIVER_STARTUP_TIMEOUT = "MAESTRO_DRIVER_STARTUP_TIMEOUT"
