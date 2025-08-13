@@ -33,6 +33,8 @@ import maestro.cli.util.ScreenReporter
 import maestro.drivers.AndroidDriver
 import maestro.drivers.IOSDriver
 import org.slf4j.LoggerFactory
+import util.IOSDeviceType
+import util.LocalSimulatorUtils
 import util.XCRunnerCLIUtils
 import xcuitest.XCTestClient
 import xcuitest.XCTestDriverClient
@@ -277,6 +279,60 @@ object MaestroSessionManager {
         openDriver: Boolean,
         driverHostPort: Int?,
     ): Maestro {
+
+        val iOSDeviceType = when (deviceType) {
+            Device.DeviceType.REAL -> IOSDeviceType.REAL
+            Device.DeviceType.SIMULATOR -> IOSDeviceType.SIMULATOR
+            else -> {
+                throw UnsupportedOperationException("Unsupported device type $deviceType for iOS platform")
+            }
+        }
+        val iOSDriverConfig = when (deviceType) {
+            Device.DeviceType.REAL -> {
+                val maestroDirectory = Paths.get(System.getProperty("user.home"), ".maestro")
+                val driverPath = maestroDirectory.resolve("maestro-iphoneos-driver-build").resolve("driver-iphoneos")
+                    .resolve("Build").resolve("Products")
+                IOSDriverConfig(
+                    prebuiltRunner = false,
+                    sourceDirectory = driverPath.pathString,
+                    context = Context.CLI,
+                    snapshotKeyHonorModalViews = platformConfiguration?.ios?.snapshotKeyHonorModalViews
+                )
+            }
+            Device.DeviceType.SIMULATOR -> {
+                if (LocalSimulatorUtils.isTV(deviceId)) {
+                    IOSDriverConfig(
+                        prebuiltRunner = false,
+                        sourceDirectory = "driver-appletvSimulator",
+                        context = Context.CLI,
+                        snapshotKeyHonorModalViews = platformConfiguration?.ios?.snapshotKeyHonorModalViews
+                    )
+                } else {
+                    IOSDriverConfig(
+                        prebuiltRunner = false,
+                        sourceDirectory =  "driver-iPhoneSimulator",
+                        context = Context.CLI,
+                        snapshotKeyHonorModalViews = platformConfiguration?.ios?.snapshotKeyHonorModalViews
+                    )
+                }
+            }
+            else -> throw UnsupportedOperationException("Unsupported device type $deviceType for iOS platform")
+        }
+
+        val deviceController = when (deviceType) {
+            Device.DeviceType.REAL -> {
+                val device = util.LocalIOSDevice().listDeviceViaDeviceCtl(deviceId)
+                val deviceCtlDevice = DeviceControlIOSDevice(deviceId = device.identifier)
+                deviceCtlDevice
+            }
+            Device.DeviceType.SIMULATOR -> {
+                val simctlIOSDevice = SimctlIOSDevice(
+                    deviceId = deviceId,
+                )
+                simctlIOSDevice
+            }
+            else -> throw UnsupportedOperationException("Unsupported device type $deviceType for iOS platform")
+        }
 
         val xcTestInstaller = LocalXCTestInstaller(
             deviceId = deviceId,
